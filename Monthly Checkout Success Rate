@@ -1,0 +1,36 @@
+WITH cart_and_checkout AS
+  (SELECT user_id,
+          action_date,
+          action_name,
+          error_message,
+          device,
+          "Checkout" AS Action_type
+   FROM 365_checkout_database.checkout_actions
+   WHERE action_name != "courseslanding_start_now.click"
+   UNION ALL SELECT user_id,
+                    action_date,
+                    NULL AS action_name,
+                    NULL AS error_message,
+                    NULL AS device,
+                    "Cart" AS Action_type
+   FROM 365_checkout_database.checkout_carts) ,
+     Final_output AS
+  (SELECT action_date,
+          SUM(CASE
+                  WHEN Action_type = "Cart" THEN 1
+                  ELSE 0
+              END)AS count_total_carts,
+          SUM(CASE
+                  WHEN Action_type = "Checkout" THEN 1
+                  ELSE 0
+              END)AS count_total_checkout_attempts,
+          SUM(CASE
+                  WHEN action_name LIKE "%success" THEN 1
+                  ELSE 0
+              END)AS count_successful_checkout_attempts
+   FROM cart_and_checkout
+   GROUP BY action_date
+   ORDER BY action_date)
+SELECT MONTH(action_date) ROUND(SUM(count_successful_checkout_attempts)/ SUM(count_total_checkout_attempts) * 100, 2) AS Monthly_Checkout_Success_Rate
+GROUP BY MONTH (action_date)
+FROM Final_output
