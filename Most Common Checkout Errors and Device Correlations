@@ -1,0 +1,8 @@
+SELECT TOP 10 device,
+           error_message,
+           COUNT(*) AS frequency
+FROM 365_checkout_database.checkout_actions
+WHERE error_message != ""
+GROUP BY device,
+         error_message
+ORDER BY COUNT(*)
